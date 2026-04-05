@@ -1,9 +1,11 @@
 #!/bin/bash
 # llm-wiki 依赖安装脚本
-# 安装素材提取所需的配套 skill
+# 从 deps/ 目录安装素材提取所需的配套 skill
 set -e
 
 SKILLS_DIR="$HOME/.claude/skills"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEPS_DIR="$SCRIPT_DIR/deps"
 
 # 颜色输出
 info()  { echo "\033[36m[信息]\033[0m $1"; }
@@ -17,14 +19,14 @@ echo "  llm-wiki 依赖安装"
 echo "================================"
 echo ""
 
-# 检查 npx 是否可用
-if ! command -v npx &>/dev/null; then
-    err "未找到 npx，请先安装 Node.js"
-    echo "  安装方式：brew install node"
+# 检查 deps 目录是否存在
+if [ ! -d "$DEPS_DIR" ]; then
+    err "未找到 deps/ 目录"
+    echo "  请确保是从完整仓库克隆的（包含 deps/ 目录）"
     exit 1
 fi
 
-# 定义依赖：名称、skill 目录名、安装命令
+# 定义依赖：目录名 → 说明
 declare -A DEPS
 DEPS=(
     ["baoyu-url-to-markdown"]="网页和公众号文章提取"
@@ -32,63 +34,38 @@ DEPS=(
     ["youtube-transcript"]="YouTube 字幕提取"
 )
 
-MISSING=()
+INSTALLED=0
+SKIPPED=0
+MISSING_SOURCE=()
+
 for skill_name in "${!DEPS[@]}"; do
     if [ -d "$SKILLS_DIR/$skill_name" ]; then
         ok "$skill_name 已安装（${DEPS[$skill_name]}）"
+        SKIPPED=$((SKIPPED + 1))
+    elif [ -d "$DEPS_DIR/$skill_name" ]; then
+        info "安装 $skill_name（${DEPS[$skill_name]}）..."
+        cp -r "$DEPS_DIR/$skill_name" "$SKILLS_DIR/$skill_name"
+        ok "$skill_name 安装完成"
+        INSTALLED=$((INSTALLED + 1))
     else
-        warn "$skill_name 未安装（${DEPS[$skill_name]}）"
-        MISSING+=("$skill_name")
-    fi
-done
-
-if [ ${#MISSING[@]} -eq 0 ]; then
-    echo ""
-    ok "所有依赖已就绪！可以直接使用 llm-wiki。"
-    exit 0
-fi
-
-echo ""
-echo "需要安装 ${#MISSING[@]} 个依赖："
-for skill_name in "${MISSING[@]}"; do
-    echo "  - $skill_name（${DEPS[$skill_name]}）"
-done
-echo ""
-
-# 尝试用 npx skills add 安装
-info "正在安装缺失的依赖..."
-echo ""
-
-FAILED=()
-for skill_name in "${MISSING[@]}"; do
-    info "安装 $skill_name..."
-    if npx skills add "$skill_name" 2>/dev/null; then
-        ok "$skill_name 安装成功"
-    else
-        warn "$skill_name 自动安装失败"
-        FAILED+=("$skill_name")
+        warn "$skill_name：deps/ 中未找到源文件"
+        MISSING_SOURCE+=("$skill_name")
     fi
 done
 
 echo ""
 echo "================================"
 
-if [ ${#FAILED[@]} -eq 0 ]; then
-    ok "所有依赖安装完成！"
-else
+if [ $INSTALLED -gt 0 ]; then
+    ok "新安装 $INSTALLED 个依赖，跳过 $SKIPPED 个（已存在）"
+fi
+
+if [ ${#MISSING_SOURCE[@]} -gt 0 ]; then
     echo ""
-    warn "以下 skill 自动安装失败，请手动安装："
-    for skill_name in "${FAILED[@]}"; do
+    warn "以下 skill 在 deps/ 中缺失，可尝试手动安装："
+    for skill_name in "${MISSING_SOURCE[@]}"; do
         echo "  npx skills add $skill_name"
     done
-    echo ""
-    echo "手动安装命令："
-    for skill_name in "${FAILED[@]}"; do
-        echo "  npx skills add $skill_name"
-    done
-    echo ""
-    echo "注意：部分 skill 可能需要在 skills 注册表中搜索对应名称。"
-    echo "可以使用 'npx skills find <关键词>' 搜索。"
 fi
 
 echo ""
