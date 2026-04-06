@@ -22,7 +22,7 @@
 
 - 你的 agent 能执行 shell 命令
 - 如果你要自动提取网页或公众号，Chrome 需要以调试模式启动
-- 如果你要自动提取 YouTube 字幕，机器上需要有 `uv`
+- 如果你要自动提取微信公众号或 YouTube 字幕，机器上需要有 `uv`
 - `bun` 或 `npm` 二选一即可，安装网页提取依赖时会自动择一使用
 
 ## 安装方式
@@ -60,8 +60,8 @@ bash install.sh --platform openclaw
 | 来源 | 提取方式 | 状态 |
 |------|----------|------|
 | 网页文章 | baoyu-url-to-markdown | 已支持 |
-| X/Twitter | x-article-extractor | 已支持 |
-| 微信公众号 | baoyu-url-to-markdown | 已支持 |
+| X/Twitter | baoyu-url-to-markdown（需 Chrome 登录） | 已支持 |
+| 微信公众号 | wechat-article-to-markdown | 已支持 |
 | YouTube | youtube-transcript | 已支持 |
 | 知乎 | baoyu-url-to-markdown（部分支持） | 基本支持 |
 | 小红书 | 手动粘贴内容 | 待接入 skill |
@@ -104,7 +104,11 @@ bash install.sh --platform openclaw
 
 ### 为什么 X / Twitter 提取还是失败？
 
-`x-article-extractor` 还依赖额外的 `baoyu-danger-x-to-markdown`。这个依赖没有打包在本仓库里，需要你自己额外安装；如果暂时不装，也可以直接把 X 内容复制粘贴给 agent 处理。
+X / Twitter 现在走 `baoyu-url-to-markdown`。如果提取失败，通常是因为 Chrome 没有启动调试模式，或者当前 Chrome 会话没有登录 X。你也可以直接把内容复制粘贴给 agent 处理。
+
+### 为什么公众号提取还是失败？
+
+公众号现在使用 `wechat-article-to-markdown`。如果机器上还没有 `uv`，安装器会提示并跳过这一项；补装 `uv` 后重新运行 `bash install.sh --platform <你的平台>` 即可。
 
 ## 目录结构
 
@@ -135,11 +139,11 @@ bash install.sh --platform openclaw
 本项目复用和集成了以下开源项目，感谢它们的作者：
 
 - **[baoyu-url-to-markdown](https://github.com/JimLiu/baoyu-skills#baoyu-url-to-markdown)** - by [JimLiu](https://github.com/JimLiu)
-  网页和公众号文章提取，通过 Chrome CDP 渲染并转换为 markdown
+  网页文章、X/Twitter 等内容提取，通过 Chrome CDP 渲染并转换为 markdown
 
 - **youtube-transcript** - YouTube 视频字幕/逐字稿提取
 
-- **x-article-extractor** - X (Twitter) 内容提取（长文章、推文串、单条推文）
+- **[wechat-article-to-markdown](https://github.com/jackwener/wechat-article-to-markdown)** - 微信公众号文章提取
 
 核心方法论来自：
 

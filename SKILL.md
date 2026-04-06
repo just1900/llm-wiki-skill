@@ -46,15 +46,15 @@ Scripts located in `scripts/` subdirectory.
 
 ## 依赖检查
 
-首次使用时，检查以下 skill 是否已安装。如果缺失，提示用户运行安装：
+首次使用时，检查以下依赖是否已安装。如果缺失，提示用户运行安装：
 
 ```bash
 bash ${SKILL_DIR}/setup.sh
 ```
 
-依赖 skill：
-- `baoyu-url-to-markdown` — 网页和公众号文章提取
-- `x-article-extractor` — X/Twitter 内容提取
+依赖 skill / 工具：
+- `baoyu-url-to-markdown` — 普通网页、X/Twitter、部分知乎提取
+- `wechat-article-to-markdown` — 微信公众号提取
 - `youtube-transcript` — YouTube 字幕提取
 
 即使部分依赖缺失，skill 仍可工作（用户可以手动粘贴文本内容）。
@@ -292,8 +292,8 @@ bash ${SKILL_DIR}/setup.sh
 
 **URL 类素材**（检查域名自动路由）：
 
-> **Chrome 提示**（仅需要调用 `baoyu-url-to-markdown` 或 `x-article-extractor` 时执行）：
-> 在调用这两个 skill 之前，先用 Bash 执行 `pgrep -x "Google Chrome"` 检查 Chrome 是否运行。
+> **Chrome 提示**（仅需要调用 `baoyu-url-to-markdown` 时执行）：
+> 在调用这个 skill 之前，先用 Bash 执行 `pgrep -x "Google Chrome"` 检查 Chrome 是否运行。
 > - 如果 Chrome **未运行** → 提示用户：
 >   ```
 >   提示：Chrome 当前未运行。baoyu-url-to-markdown 会尝试自动启动 Chrome，
@@ -302,8 +302,8 @@ bash ${SKILL_DIR}/setup.sh
 >   **继续执行**，不要等待用户确认——extractor 会自己处理 Chrome 启动。
 > - 如果 Chrome **已运行** → 正常继续，无需提示。
 
-- `x.com` / `twitter.com` → 调用 `x-article-extractor`
-- `mp.weixin.qq.com` → 调用 `baoyu-url-to-markdown`
+- `x.com` / `twitter.com` → 调用 `baoyu-url-to-markdown`
+- `mp.weixin.qq.com` → 执行 `wechat-article-to-markdown "<URL>"`
 - `youtube.com` / `youtu.be` → 调用 `youtube-transcript`
 - `xiaohongshu.com` / `xhslink.com` → **无法自动提取**，提示用户：
   ```

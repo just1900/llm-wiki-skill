@@ -64,6 +64,12 @@ exit 0'
     make_stub "$tmp_dir/bin/lsof" '#!/bin/sh
 exit 1'
 
+    make_stub "$tmp_dir/bin/uv" "#!/bin/sh
+printf '%s\n' \"\$*\" >> \"$tmp_dir/uv.log\"
+printf '%s\n' '#!/bin/sh' 'exit 0' > \"$tmp_dir/bin/wechat-article-to-markdown\"
+chmod +x \"$tmp_dir/bin/wechat-article-to-markdown\"
+exit 0"
+
     output="$(
         HOME="$tmp_dir/home" \
         PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
@@ -71,12 +77,14 @@ exit 1'
     )" || fail "setup.sh should run successfully under bash 3.2"
 
     [ -d "$tmp_dir/home/.claude/skills/baoyu-url-to-markdown" ] || fail "Expected baoyu-url-to-markdown to be installed"
-    [ -d "$tmp_dir/home/.claude/skills/x-article-extractor" ] || fail "Expected x-article-extractor to be installed"
     [ -d "$tmp_dir/home/.claude/skills/youtube-transcript" ] || fail "Expected youtube-transcript to be installed"
+    [ ! -d "$tmp_dir/home/.claude/skills/x-article-extractor" ] || fail "Did not expect x-article-extractor to be installed"
+    assert_path_exists "$tmp_dir/bin/wechat-article-to-markdown"
+    assert_file_contains "$tmp_dir/uv.log" "tool install git+https://github.com/jackwener/wechat-article-to-markdown.git"
 
     assert_text_contains "$output" "Chrome 调试端口 9222 未监听"
     assert_text_contains "$output" "open -na \"Google Chrome\" --args --remote-debugging-port=9222"
-    assert_text_contains "$output" "未找到 uv"
+    assert_text_contains "$output" "wechat-article-to-markdown 安装完成"
 }
 
 test_install_dry_run_for_claude() {
@@ -154,7 +162,44 @@ test_readme_sections() {
     assert_file_contains "$REPO_ROOT/README.md" "bash install.sh --platform claude"
     assert_file_contains "$REPO_ROOT/README.md" "bash install.sh --platform codex"
     assert_file_contains "$REPO_ROOT/README.md" "bash install.sh --platform openclaw"
-    assert_file_contains "$REPO_ROOT/README.md" "baoyu-danger-x-to-markdown"
+    assert_file_contains "$REPO_ROOT/README.md" "wechat-article-to-markdown"
+    assert_file_not_contains "$REPO_ROOT/README.md" "x-article-extractor"
+    assert_file_not_contains "$REPO_ROOT/README.md" "baoyu-danger-x-to-markdown"
+}
+
+test_uv_tool_install_failure_is_graceful() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home/.claude/skills" "$tmp_dir/bin"
+
+    make_stub "$tmp_dir/bin/bun" '#!/bin/sh
+mkdir -p node_modules
+exit 0'
+
+    make_stub "$tmp_dir/bin/lsof" '#!/bin/sh
+exit 1'
+
+    make_stub "$tmp_dir/bin/uv" '#!/bin/sh
+exit 1'
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+        bash "$REPO_ROOT/install.sh" --platform claude 2>&1
+    )" || fail "install.sh should keep going when uv tool install fails"
+
+    assert_text_contains "$output" "wechat-article-to-markdown 安装失败"
+    assert_text_contains "$output" "llm-wiki 已准备完成"
+    assert_path_exists "$tmp_dir/home/.claude/skills/llm-wiki/SKILL.md"
+}
+
+test_skill_md_routes_wechat_to_new_tool() {
+    assert_file_contains "$REPO_ROOT/SKILL.md" "mp.weixin.qq.com"
+    assert_file_contains "$REPO_ROOT/SKILL.md" "wechat-article-to-markdown"
+    assert_file_contains "$REPO_ROOT/SKILL.md" '- `x.com` / `twitter.com` → 调用 `baoyu-url-to-markdown`'
+    assert_file_not_contains "$REPO_ROOT/SKILL.md" "x-article-extractor"
 }
 
 test_templates_have_no_empty_links() {
@@ -178,6 +223,8 @@ test_install_auto_refuses_ambiguous_platforms
 test_install_openclaw_copies_bundle
 test_init_fills_language_placeholder
 test_readme_sections
+test_uv_tool_install_failure_is_graceful
+test_skill_md_routes_wechat_to_new_tool
 test_templates_have_no_empty_links
 test_batch_ingest_has_step_two
 

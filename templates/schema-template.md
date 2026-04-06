@@ -105,8 +105,8 @@ sources: [关联素材列表]
 | 来源 | raw 目录 | 提取方式 |
 |------|----------|----------|
 | 网页文章 | `raw/articles/` | baoyu-url-to-markdown skill |
-| X/Twitter | `raw/tweets/` | x-article-extractor skill |
-| 微信公众号 | `raw/wechat/` | baoyu-url-to-markdown skill |
+| X/Twitter | `raw/tweets/` | baoyu-url-to-markdown skill（需 Chrome 登录） |
+| 微信公众号 | `raw/wechat/` | wechat-article-to-markdown |
 | YouTube | `raw/articles/` | youtube-transcript skill |
 | 小红书 | `raw/xiaohongshu/` | 用户手动粘贴内容 |
 | 知乎 | `raw/zhihu/` | 用户手动粘贴内容 或 baoyu-url-to-markdown skill |

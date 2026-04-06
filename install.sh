@@ -24,9 +24,10 @@ MANAGED_ITEMS=(
 
 DEP_SKILLS=(
   "baoyu-url-to-markdown"
-  "x-article-extractor"
   "youtube-transcript"
 )
+
+WECHAT_TOOL_URL="git+https://github.com/jackwener/wechat-article-to-markdown.git"
 
 info()  { printf '\033[36m[信息]\033[0m %s\n' "$1"; }
 ok()    { printf '\033[32m[完成]\033[0m %s\n' "$1"; }
@@ -184,6 +185,33 @@ install_node_deps() {
   [ -d "$baoyu_dir/node_modules" ] && ok "baoyu-url-to-markdown 的 Node 依赖安装完成"
 }
 
+install_uv_tools() {
+  if ! command -v uv >/dev/null 2>&1; then
+    warn "未找到 uv，跳过 wechat-article-to-markdown 安装"
+    echo "  安装 uv：curl -LsSf https://astral.sh/uv/install.sh | sh"
+    return 0
+  fi
+
+  if command -v wechat-article-to-markdown >/dev/null 2>&1; then
+    ok "wechat-article-to-markdown 已安装"
+    return 0
+  fi
+
+  info "安装 wechat-article-to-markdown..."
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] uv tool install %s\n' "${WECHAT_TOOL_URL}"
+    return 0
+  fi
+
+  uv tool install "${WECHAT_TOOL_URL}" \
+    || warn "wechat-article-to-markdown 安装失败（可手动安装：uv tool install ${WECHAT_TOOL_URL}）"
+
+  if command -v wechat-article-to-markdown >/dev/null 2>&1; then
+    ok "wechat-article-to-markdown 安装完成"
+  fi
+}
+
 check_environment() {
   echo ""
   echo "================================"
@@ -192,10 +220,17 @@ check_environment() {
   echo ""
 
   if command -v uv >/dev/null 2>&1; then
-    ok "uv 已安装（youtube-transcript 可用）"
+    ok "uv 已安装（可安装 wechat-article-to-markdown，并运行 youtube-transcript）"
   else
-    warn "未找到 uv。youtube-transcript 需要 uv 才能提取 YouTube 字幕"
+    warn "未找到 uv。wechat-article-to-markdown 和 youtube-transcript 需要 uv"
     echo "  可用 Homebrew 安装：brew install uv"
+  fi
+
+  if command -v wechat-article-to-markdown >/dev/null 2>&1; then
+    ok "wechat-article-to-markdown 已可用"
+  else
+    warn "未找到 wechat-article-to-markdown。无法自动提取微信公众号"
+    echo "  可手动安装：uv tool install ${WECHAT_TOOL_URL}"
   fi
 
   if command -v lsof >/dev/null 2>&1 && lsof -i :9222 -sTCP:LISTEN >/dev/null 2>&1; then
@@ -207,8 +242,8 @@ check_environment() {
 
   echo ""
   echo "提示：即使部分依赖缺失，llm-wiki 仍可使用："
-  echo "  - 缺少 baoyu-url-to-markdown → 无法自动提取网页/公众号"
-  echo "  - 缺少 x-article-extractor → 无法自动提取 X/Twitter 内容"
+  echo "  - 缺少 baoyu-url-to-markdown → 无法自动提取普通网页、X/Twitter、部分知乎"
+  echo "  - 缺少 wechat-article-to-markdown → 无法自动提取微信公众号"
   echo "  - 缺少 youtube-transcript → 无法自动提取 YouTube 字幕"
   echo "  - 上述情况可以手动粘贴文本内容作为替代"
 }
@@ -281,6 +316,7 @@ run_cmd mkdir -p "$TARGET_SKILL_DIR"
 install_bundle "$TARGET_SKILL_DIR"
 install_dependency_skills "$SKILL_ROOT"
 install_node_deps "$SKILL_ROOT"
+install_uv_tools
 check_environment
 
 echo ""
