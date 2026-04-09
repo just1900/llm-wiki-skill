@@ -90,7 +90,7 @@ exit 0'
     assert_text_contains "$output" "请先从 App 或网页复制内容"
 }
 
-test_adapter_state_distinguishes_env_unavailable() {
+test_adapter_state_distinguishes_web_capture_availability_and_uv_env_unavailable() {
     local tmp_dir output
     tmp_dir="$(mktemp -d)"
     trap 'rm -rf "$tmp_dir"' RETURN
@@ -104,10 +104,11 @@ exit 1'
     output="$(
         PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
         bash "$REPO_ROOT/scripts/adapter-state.sh" --skill-root "$tmp_dir/skills" check web_article 2>&1
-    )" || fail "adapter-state should classify env_unavailable for Chrome-backed sources"
+    )" || fail "adapter-state should keep Chrome-backed sources available without 9222"
 
-    assert_text_contains "$output" "env_unavailable"
-    assert_text_contains "$output" "Chrome"
+    assert_text_contains "$output" "available"
+    assert_text_contains "$output" "临时浏览器"
+    assert_text_contains "$output" "9222"
 
     output="$(
         PATH="$tmp_dir/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
@@ -185,7 +186,8 @@ exit 0"
 
     assert_text_contains "$output" "外挂状态"
     assert_text_contains "$output" "网页文章"
-    assert_text_contains "$output" "环境不满足"
+    assert_text_contains "$output" "可用"
+    assert_text_contains "$output" "临时浏览器"
     assert_text_contains "$output" "微信公众号"
     assert_text_contains "$output" "可用"
 }
@@ -198,7 +200,7 @@ test_skill_routes_ingest_and_status_through_adapter_state_model() {
 
 test_adapter_state_distinguishes_not_installed_and_unsupported
 test_bundled_adapters_are_not_treated_as_installed_from_repo_checkout
-test_adapter_state_distinguishes_env_unavailable
+test_adapter_state_distinguishes_web_capture_availability_and_uv_env_unavailable
 test_adapter_state_distinguishes_runtime_failed_and_empty_result
 test_install_reports_adapter_states_from_shared_model
 test_skill_routes_ingest_and_status_through_adapter_state_model

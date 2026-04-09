@@ -269,10 +269,10 @@ check_environment() {
   fi
 
   if command -v lsof >/dev/null 2>&1 && lsof -i :9222 -sTCP:LISTEN >/dev/null 2>&1; then
-    ok "Chrome 调试端口 9222 已监听"
+    ok "Chrome 调试端口 9222 已监听（可复用已登录会话）"
   else
-    warn "Chrome 调试端口 9222 未监听。baoyu-url-to-markdown 需要 Chrome 以调试模式启动"
-    echo "  请先执行：open -na \"Google Chrome\" --args --remote-debugging-port=9222"
+    info "未检测到 Chrome 调试端口 9222。baoyu-url-to-markdown 仍可自动拉起临时浏览器"
+    echo "  如需复用已登录会话，再执行：open -na \"Google Chrome\" --args --remote-debugging-port=9222"
   fi
 
   echo ""

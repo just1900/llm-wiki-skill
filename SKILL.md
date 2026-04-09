@@ -246,9 +246,9 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
 **URL 类素材**（统一走来源总表，不手写域名表）：
 
 > **Chrome 提示**（仅当 `adapter_name=baoyu-url-to-markdown` 时）：
-> adapter-state.sh check 已通过 `lsof -i :9222 -sTCP:LISTEN` 确认 Chrome 调试端口状态。
-> 如果 check 返回 `env_unavailable`，直接按 `fallback_hint` 引导用户，不要自行检测 Chrome。
-> 如果 check 返回 `available`，正常调用外挂。baoyu-url-to-markdown 会自己处理 Chrome 启动，**继续执行，不要等待用户确认**。
+> adapter-state.sh check 会把“提取器可用”与“是否存在 9222 可复用会话”分开表达。
+> 如果 check 返回 `available`，正常调用外挂；即使 detail 提示未检测到 9222，也继续执行。baoyu-url-to-markdown 会自己处理 Chrome 启动，**继续执行，不要等待用户确认**。
+> 只有在你想复用当前已登录的 Chrome 会话时，才需要手动开启 9222。
 > 如果提取仍然失败，提示用户：`open -na "Google Chrome" --args --remote-debugging-port=9222`
 
 - 如果 `source_category=manual_only` → 不调用外挂，直接使用 `fallback_hint`

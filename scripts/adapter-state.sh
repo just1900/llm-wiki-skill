@@ -131,7 +131,7 @@ env_install_hint() {
 
   case "$source_id" in
     web_article|x_twitter|zhihu_article)
-      printf '%s\n' '先执行：open -na "Google Chrome" --args --remote-debugging-port=9222'
+      printf '%s\n' '如需复用已登录的浏览器会话，可执行：open -na "Google Chrome" --args --remote-debugging-port=9222'
       ;;
     wechat_article|youtube_video)
       printf '%s\n' "先安装 uv：brew install uv"
@@ -216,16 +216,17 @@ EOF
             detail="未找到 ${adapter_name}"
             recovery_action="先补安装；现在也可以直接走手动入口"
             install_hint="$(default_install_hint "$source_id" "$adapter_name")"
-          elif ! chrome_debug_ready; then
-            state="env_unavailable"
-            detail="Chrome 调试端口 9222 未监听"
-            recovery_action="先补环境；现在也可以直接走手动入口"
-            install_hint="$(env_install_hint "$source_id")"
           else
             state="available"
-            detail="${adapter_name} 已可用"
-            recovery_action="继续自动提取"
-            install_hint="-"
+            if chrome_debug_ready; then
+              detail="${adapter_name} 已可用，且已检测到可复用的 Chrome 调试会话"
+              recovery_action="继续自动提取"
+              install_hint="-"
+            else
+              detail="${adapter_name} 已可用；未检测到 9222，将在需要时自动拉起临时浏览器"
+              recovery_action="继续自动提取；如需复用已登录会话，可先开启 Chrome 调试端口 9222"
+              install_hint="$(env_install_hint "$source_id")"
+            fi
           fi
           ;;
         youtube_video)
@@ -368,7 +369,11 @@ EOF
     printf '%s\n' "- ${source_label}：${state_label_value}。${detail}。"
     printf '%s\n' "  下一步：${recovery_action}。"
     if [ "$install_hint" != "-" ]; then
-      printf '%s\n' "  安装提示：${install_hint}。"
+      if [ "$state" = "available" ]; then
+        printf '%s\n' "  补充说明：${install_hint}。"
+      else
+        printf '%s\n' "  安装提示：${install_hint}。"
+      fi
     fi
     printf '%s\n' "  回退方式：${fallback_hint}。"
   done <<EOF

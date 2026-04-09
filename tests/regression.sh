@@ -133,7 +133,8 @@ exit 0"
     assert_path_exists "$tmp_dir/bin/wechat-article-to-markdown"
     assert_file_contains "$tmp_dir/uv.log" "tool install git+https://github.com/jackwener/wechat-article-to-markdown.git"
 
-    assert_text_contains "$output" "Chrome 调试端口 9222 未监听"
+    assert_text_contains "$output" "未检测到 Chrome 调试端口 9222"
+    assert_text_contains "$output" "仍可自动拉起临时浏览器"
     assert_text_contains "$output" "open -na \"Google Chrome\" --args --remote-debugging-port=9222"
     assert_text_contains "$output" "wechat-article-to-markdown 安装完成"
 }
