@@ -208,6 +208,68 @@ test_init_fills_language_placeholder() {
     assert_file_not_contains "$wiki_root/.wiki-schema.md" "{{LANGUAGE}}"
 }
 
+test_phase1_templates_exist() {
+    assert_path_exists "$REPO_ROOT/templates/purpose-template.md"
+    assert_path_exists "$REPO_ROOT/templates/purpose-en-template.md"
+    assert_path_exists "$REPO_ROOT/templates/query-template.md"
+
+    assert_file_contains "$REPO_ROOT/templates/purpose-template.md" "# 研究目的与方向"
+    assert_file_contains "$REPO_ROOT/templates/purpose-template.md" "## 核心目标"
+    assert_file_contains "$REPO_ROOT/templates/purpose-en-template.md" "# Research Purpose and Direction"
+    assert_file_contains "$REPO_ROOT/templates/purpose-en-template.md" "## Core Goal"
+    assert_file_contains "$REPO_ROOT/templates/query-template.md" "type: query"
+    assert_file_contains "$REPO_ROOT/templates/query-template.md" "derived: true"
+}
+
+test_init_creates_purpose_and_cache_files() {
+    local tmp_dir wiki_root
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    wiki_root="$tmp_dir/English Wiki"
+    bash "$REPO_ROOT/scripts/init-wiki.sh" "$wiki_root" "测试主题" "English" > /dev/null
+
+    assert_path_exists "$wiki_root/purpose.md"
+    assert_path_exists "$wiki_root/.wiki-cache.json"
+    assert_file_contains "$wiki_root/purpose.md" "# Research Purpose and Direction"
+    assert_file_contains "$wiki_root/.wiki-cache.json" '"version": 1'
+    assert_file_contains "$wiki_root/.wiki-cache.json" '"entries": {}'
+}
+
+test_cache_script_handles_miss_hit_and_invalidate() {
+    local tmp_dir wiki_root file_path output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    wiki_root="$tmp_dir/cache-wiki"
+    bash "$REPO_ROOT/scripts/init-wiki.sh" "$wiki_root" "缓存测试" "中文" > /dev/null
+
+    file_path="$wiki_root/raw/articles/example.md"
+    printf '缓存测试内容\n' > "$file_path"
+
+    output="$(
+        bash "$REPO_ROOT/scripts/cache.sh" check "$file_path" 2>&1
+    )" || fail "cache.sh check should work for uncached files"
+    [ "$output" = "MISS" ] || fail "Expected initial cache check to be MISS"
+
+    printf '# 来源页\n' > "$wiki_root/wiki/sources/example.md"
+    bash "$REPO_ROOT/scripts/cache.sh" update "$file_path" "wiki/sources/example.md" > /dev/null 2>&1 \
+        || fail "cache.sh update should succeed"
+
+    output="$(
+        bash "$REPO_ROOT/scripts/cache.sh" check "$file_path" 2>&1
+    )" || fail "cache.sh check should work for cached files"
+    [ "$output" = "HIT" ] || fail "Expected updated cache check to be HIT"
+
+    bash "$REPO_ROOT/scripts/cache.sh" invalidate "$file_path" > /dev/null 2>&1 \
+        || fail "cache.sh invalidate should succeed"
+
+    output="$(
+        bash "$REPO_ROOT/scripts/cache.sh" check "$file_path" 2>&1
+    )" || fail "cache.sh check should work after invalidation"
+    [ "$output" = "MISS" ] || fail "Expected invalidated cache check to be MISS"
+}
+
 test_readme_sections() {
     assert_file_contains "$REPO_ROOT/README.md" "## 前置条件"
     assert_file_contains "$REPO_ROOT/README.md" "## 常见问题"
@@ -493,6 +555,9 @@ test_install_dry_run_for_claude
 test_install_auto_refuses_ambiguous_platforms
 test_install_openclaw_copies_bundle
 test_init_fills_language_placeholder
+test_phase1_templates_exist
+test_init_creates_purpose_and_cache_files
+test_cache_script_handles_miss_hit_and_invalidate
 test_readme_sections
 test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool

@@ -52,6 +52,21 @@ echo "[完成] 日志文件已生成"
 replace_vars "$SKILL_DIR/templates/overview-template.md" "$WIKI_ROOT/wiki/overview.md"
 echo "[完成] 总览文件已生成"
 
+if [ "$LANGUAGE" = "English" ]; then
+    replace_vars "$SKILL_DIR/templates/purpose-en-template.md" "$WIKI_ROOT/purpose.md"
+else
+    replace_vars "$SKILL_DIR/templates/purpose-template.md" "$WIKI_ROOT/purpose.md"
+fi
+echo "[完成] 研究方向文件已生成"
+
+cat > "$WIKI_ROOT/.wiki-cache.json" <<'EOF'
+{
+  "version": 1,
+  "entries": {}
+}
+EOF
+echo "[完成] 缓存文件已生成"
+
 echo ""
 echo "知识库创建完成！"
 echo ""
@@ -69,6 +84,8 @@ echo "   │   └── assets/       图片等附件"
 echo "   ├── wiki/       （知识库）"
 echo "   ├── index.md    （索引）"
 echo "   ├── log.md      （日志）"
+echo "   ├── purpose.md  （研究方向）"
+echo "   ├── .wiki-cache.json （缓存）"
 echo "   └── .wiki-schema.md （配置）"
 echo ""
 echo "下一步：给 agent 一个链接或文件，开始构建知识库！"
