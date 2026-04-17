@@ -1391,7 +1391,7 @@ test_graph_html_escapes_script_tag_in_content() {
     # </script> 必须被转义为 <\/script>
     html=$(cat "$output_dir/knowledge-graph.html")
     assert_text_not_contains "$html" '</script> 标签'
-    assert_text_contains "$html" '<\\/script> 标签'
+    assert_text_contains "$html" '<\/script> 标签'
 }
 
 test_graph_html_missing_data_exits_with_error() {
