@@ -511,6 +511,61 @@ button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
   .brand__title { display: none; }
 }
 
+.layout.layout--mobile {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr var(--footer-h);
+  grid-template-areas:
+    "brand"
+    "tools"
+    "canvas"
+    "footer";
+}
+.layout.layout--mobile.drawer-open {
+  grid-template-columns: 1fr;
+}
+.layout.layout--mobile .brand {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  padding: 10px 12px;
+}
+.layout.layout--mobile .brand__meta {
+  width: 100%;
+  font-size: 11px;
+  white-space: normal;
+  text-align: left;
+}
+.layout.layout--mobile .toolbar {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  min-height: var(--tools-h);
+  height: auto;
+  padding: 8px 12px;
+}
+.layout.layout--mobile .search {
+  flex: 1 1 100%;
+  max-width: none;
+}
+.layout.layout--mobile .filters {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 13px;
+}
+.layout.layout--mobile .filter-chk {
+  min-height: auto;
+  padding: 4px 0;
+}
+.layout.layout--mobile .drawer {
+  display: none;
+}
+.layout.layout--mobile .footer {
+  padding: 0 12px;
+}
+.layout.layout--mobile .footer__right {
+  display: none;
+}
+
 /* screen-reader only */
 .sr-only {
   position: absolute;
@@ -672,4 +727,3 @@ button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
      2) templates/graph-template-footer.html（含 </script> 闭标签、
         vis-network/marked/purify 加载、以及交互初始化脚本）。 -->
 <script id="graph-data" type="application/json">
-

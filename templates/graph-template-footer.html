@@ -66,6 +66,33 @@
     mobileAccepted: false
   };
 
+  function findNode(nodeId) {
+    return state.data.nodes.filter(function (x) { return x.id === nodeId; })[0] || null;
+  }
+
+  function isMobileViewport() {
+    return window.innerWidth < 768;
+  }
+
+  function isMobileCanvasMode() {
+    return isMobileViewport() && state.mobileAccepted;
+  }
+
+  function setMobileOverlayVisible(show) {
+    dom.overlayMobile.setAttribute("data-show", show ? "1" : "0");
+    if ("inert" in dom.layout) {
+      dom.layout.inert = show;
+    } else {
+      dom.layout.setAttribute("aria-hidden", show ? "true" : "false");
+    }
+    document.body.style.overflow = show ? "hidden" : "";
+  }
+
+  function setMobileCanvasMode(enabled) {
+    dom.layout.classList.toggle("layout--mobile", enabled);
+    if (enabled) closeDrawer();
+  }
+
   // 颜色从 CSS 变量读，避免 JS / CSS 双源维护
   var css = getComputedStyle(document.documentElement);
   function cssVar(name, fallback) {
@@ -109,17 +136,22 @@
   window.__libLoadFailed = __libLoadFailed;
 
   function detectMobile() {
-    if (window.innerWidth >= 768 || state.mobileAccepted) return false;
-    dom.overlayMobile.setAttribute("data-show", "1");
+    if (!isMobileViewport()) {
+      setMobileOverlayVisible(false);
+      setMobileCanvasMode(false);
+      return false;
+    }
+    if (state.mobileAccepted) {
+      setMobileOverlayVisible(false);
+      setMobileCanvasMode(true);
+      return false;
+    }
+    setMobileCanvasMode(false);
+    setMobileOverlayVisible(true);
     dom.overlayMobileContinue.addEventListener("click", function () {
       state.mobileAccepted = true;
-      dom.overlayMobile.setAttribute("data-show", "0");
-      document.addEventListener("DOMContentLoaded", function () {
-        if (!parseData()) return;
-        if (!checkVendorsReady()) return;
-        boot();
-      });
-      // DOMContentLoaded 已触发，直接重入
+      setMobileOverlayVisible(false);
+      setMobileCanvasMode(true);
       if (!parseData()) return;
       if (!checkVendorsReady()) return;
       boot();
@@ -315,7 +347,15 @@
     });
 
     state.network.on("selectNode", function (params) {
-      if (params.nodes && params.nodes[0]) openDrawer(params.nodes[0]);
+      if (params.nodes && params.nodes[0]) {
+        if (isMobileCanvasMode()) {
+          focusNode(params.nodes[0], { pulse: true, openDrawer: false });
+          showToast("手机模式仅查看图谱轮廓；节点详情请在桌面浏览器打开");
+          try { state.network.unselectAll(); } catch (_) {}
+          return;
+        }
+        openDrawer(params.nodes[0]);
+      }
     });
     state.network.on("click", function (params) {
       if (!params.nodes || !params.nodes.length) closeDrawer();
@@ -435,7 +475,13 @@
     dom.searchDropdown.setAttribute("data-open", "0");
     var target = matches[0];
     if (commit || matches.length === 1) {
-      focusNode(target.id, { pulse: true, openDrawer: true });
+      focusNode(target.id, {
+        pulse: true,
+        openDrawer: !isMobileCanvasMode()
+      });
+      if (isMobileCanvasMode()) {
+        showToast("手机模式仅查看图谱轮廓；节点详情请在桌面浏览器打开");
+      }
     }
   }
 
@@ -540,7 +586,7 @@
   }
 
   function openDrawer(nodeId) {
-    var n = state.data.nodes.filter(function (x) { return x.id === nodeId; })[0];
+    var n = findNode(nodeId);
     if (!n) return;
 
     dom.drawer.setAttribute("data-node-id", nodeId);
@@ -605,6 +651,7 @@
   // ─── 12. 键盘快捷键 ──────────────────────────────────────────
   function wireKeyboard() {
     document.addEventListener("keydown", function (e) {
+      if (dom.overlayMobile.getAttribute("data-show") === "1") return;
       // Esc：清搜索 → 关抽屉
       if (e.key === "Escape") {
         if (dom.search.value) {
@@ -643,7 +690,7 @@
           state.network.moveTo({ scale: state.network.getScale() / 1.2 });
         } else if (e.key === "Enter") {
           var sel = state.network.getSelectedNodes();
-          if (sel && sel[0]) openDrawer(sel[0]);
+          if (sel && sel[0] && !isMobileCanvasMode()) openDrawer(sel[0]);
         }
       }
     });
@@ -653,8 +700,17 @@
   function wireResize() {
     window.addEventListener("resize", function () {
       if (state.network) state.network.redraw();
-      if (window.innerWidth < 768 && !state.mobileAccepted) {
-        dom.overlayMobile.setAttribute("data-show", "1");
+      if (isMobileViewport()) {
+        if (state.mobileAccepted) {
+          setMobileOverlayVisible(false);
+          setMobileCanvasMode(true);
+        } else {
+          setMobileCanvasMode(false);
+          setMobileOverlayVisible(true);
+        }
+      } else {
+        setMobileOverlayVisible(false);
+        setMobileCanvasMode(false);
       }
     });
   }
