@@ -117,6 +117,9 @@ default_install_hint() {
     youtube_video)
       printf '%s\n' "重新运行当前平台的 llm-wiki 安装命令，并追加 --with-optional-adapters，确认 ${adapter_name} 已准备到技能目录"
       ;;
+    feishu_doc)
+      printf '%s\n' "执行：pip install feishu-docx 或 uv pip install feishu-docx"
+      ;;
     *)
       printf '%s\n' "-"
       ;;

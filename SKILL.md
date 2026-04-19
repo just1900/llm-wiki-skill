@@ -60,6 +60,7 @@ bash ${SKILL_DIR}/install.sh --platform <当前平台> --with-optional-adapters
 - `baoyu-url-to-markdown` — 普通网页、X/Twitter、部分知乎提取
 - `wechat-article-to-markdown` — 微信公众号提取
 - `youtube-transcript` — YouTube 字幕提取
+- `feishu-docx` — 飞书云文档导出（pip install feishu-docx）
 
 即使这些依赖缺失，skill 仍可工作（用户可以直接提供本地文件、粘贴文本，或改走手动入口）。
 
@@ -296,6 +297,7 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
 - 如果 `source_category=manual_only` → 不调用外挂，直接使用 `fallback_hint`
 - 如果 `adapter_name=wechat-article-to-markdown` → 执行 `wechat-article-to-markdown "<URL>"`
 - 如果 `adapter_name=youtube-transcript` → 调用 `youtube-transcript`
+- 如果 `adapter_name=feishu-docx` → 执行 `feishu-docx export "<URL>" -o "<wiki_root>/raw/feishu" -a "<wiki_root>/raw/assets" --stdout`，将 stdout 内容作为提取结果；图片自动保存到 `raw/assets/` 目录
 - 如果 `adapter_name=baoyu-url-to-markdown` → 调用 `baoyu-url-to-markdown`
 
 **本地文件**：
